@@ -1,7 +1,7 @@
 import flet as ft
 from Frontend.Views.Chat import Chat
 
-def Home(page: ft.Page):
+def Home(page: ft.Page, user_id=None):
     page.title = "ANGLAI - Guía Rápida"
     page.vertical_alignment = ft.CrossAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
@@ -98,7 +98,7 @@ def Home(page: ft.Page):
 
     def on_start_chat_click(e):
         page.clean()
-        Chat(page)
+        Chat(page, user_id=user_id)
         page.update()
 
     start_button = ft.ElevatedButton(

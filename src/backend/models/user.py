@@ -37,3 +37,14 @@ class User:
         except Exception as e:
             print("Error al registrar usuario:", e)
             return False
+
+    def get_user_id(self, username: str) -> int:
+        """Obtiene el id del usuario dado su nombre de usuario."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM User WHERE usuario = ?", (username,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return row[0]
+        return None

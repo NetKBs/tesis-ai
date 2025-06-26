@@ -92,7 +92,11 @@ class Gemini:
         finally:
             conn.close() 
     
-    def _cargar_historial(self, chat_id: int) -> List[Dict[str, str]]:
+    def _cargar_historial(self, chat_id: int, filtrar_system_prompt: bool = True) -> List[Dict[str, str]]:
+        """
+        Si filtrar_system_prompt=True (por defecto), el system prompt no se incluye en el historial devuelto.
+        Si filtrar_system_prompt=False, se incluye (solo para el modelo Gemini).
+        """
         conn = self._get_db_connection()
         cursor = conn.cursor()
         try:
@@ -100,10 +104,15 @@ class Gemini:
                 "SELECT role, contenido FROM Historial WHERE chat_id = ? ORDER BY orden",
                 (chat_id,)
             )
-            return [{"role": row[0], "content": row[1]} for row in cursor.fetchall()]
+            mensajes = []
+            for i, row in enumerate(cursor.fetchall()):
+                if filtrar_system_prompt and i == 0 and row[0] == "user" and row[1].strip().startswith("Actúa como Anglai"):
+                    continue
+                mensajes.append({"role": row[0], "content": row[1]})
+            return mensajes
         finally:
             conn.close() 
-    
+
     def generar_respuesta(self, prompt: str, chat_id: Optional[int] = None, user_id: Optional[int] = None) -> str:
         if chat_id is None:
             if user_id is None:
@@ -114,17 +123,14 @@ class Gemini:
             self.current_chat_id = chat_id 
 
         self._guardar_mensaje(chat_id, "user", prompt)
-        
-        historial = self._cargar_historial(chat_id)
-        
+        # No filtrar el system prompt para el modelo
+        historial = self._cargar_historial(chat_id, filtrar_system_prompt=False)
         contents = [types.Content(role=msg["role"], parts=[types.Part(text=msg["content"])]) 
                     for msg in historial]
-        
         response = self.client.models.generate_content(
             model="gemini-2.0-flash",
             contents=contents
         )
-        
         self._guardar_mensaje(chat_id, "model", response.text)
         return response.text
     
@@ -184,8 +190,12 @@ class Gemini:
                 "SELECT role, contenido, fecha FROM Historial WHERE chat_id = ? ORDER BY orden",
                 (chat_id,)
             )
-            return [{"role": row[0], "content": row[1], "fecha": row[2]} 
-                    for row in cursor.fetchall()]
+            mensajes = []
+            for i, row in enumerate(cursor.fetchall()):
+                if i == 0 and row[0] == "user" and row[1].strip().startswith("Actúa como Anglai"):
+                    continue
+                mensajes.append({"role": row[0], "content": row[1], "fecha": row[2]})
+            return mensajes
         finally:
             conn.close()
     

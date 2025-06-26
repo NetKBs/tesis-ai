@@ -62,8 +62,9 @@ def Login(page: ft.Page):
         user = User()
         if user.login(username, password):
             print("Inicio de sesión exitoso")
+            user_id = user.get_user_id(username)
             page.clean()
-            Home(page)
+            Home(page, user_id=user_id)
             page.update()
         else:
             print("Usuario o contraseña incorrectos")

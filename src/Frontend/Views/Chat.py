@@ -2,13 +2,44 @@ import flet as ft
 from backend.models.gemini import Gemini
 
 
-def Chat(page: ft.Page):
+def Chat(page: ft.Page, user_id=None):
     page.title = "Chat Interface"
     gemini_client = Gemini()
-    current_user_id = 1
+    # Si se pasa el user_id, úsalo, si no, usa 1 por defecto
+    current_user_id = user_id if user_id is not None else 1
 
-    messages = []
     current_chat_id = None
+    messages = []
+
+    def cargar_historial():
+        nonlocal messages, current_chat_id
+        # Buscar el último chat_id del usuario
+        import sqlite3
+
+        conn = sqlite3.connect("tesisIA.db")
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id FROM Chat WHERE user_id = ? ORDER BY id DESC LIMIT 1",
+            (current_user_id,),
+        )
+        row = cursor.fetchone()
+        if row:
+            current_chat_id = row[0]
+            # Cargar historial real
+            cursor.execute(
+                "SELECT role, contenido FROM Historial WHERE chat_id = ? ORDER BY orden",
+                (current_chat_id,),
+            )
+            mensajes_db = cursor.fetchall()
+            messages = []
+            for i, msg in enumerate(mensajes_db):
+                if i == 0 and msg[0] == "user" and msg[1].strip().startswith("Actúa como Anglai"):
+                    continue
+                messages.append((msg[1], msg[0]))
+        else:
+            current_chat_id = None
+            messages = []
+        conn.close()
 
     def update_chat(e=None):
         chat_column.controls.clear()
@@ -107,7 +138,7 @@ def Chat(page: ft.Page):
     )
 
     def send_message(e):
-        nonlocal current_chat_id
+        nonlocal current_chat_id, messages
         user_msg = input_field.value.strip()
         if user_msg:
             messages.append((user_msg, "user"))
@@ -209,6 +240,7 @@ def Chat(page: ft.Page):
 
     page.add(ft.Container(content=chat_area, expand=True))
 
+    cargar_historial()
     update_chat()
 
 
