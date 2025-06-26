@@ -33,6 +33,18 @@ def Register(page: ft.Page):
         autocorrect=False,
         enable_suggestions=False,
     )
+    name_field = ft.TextField(
+        label="Nombre real",
+        label_style=ft.TextStyle(color=ft.Colors.BLUE_GREY_100),
+        border_color=ft.Colors.CYAN_ACCENT_400,
+        focused_border_color=ft.Colors.CYAN_ACCENT_200,
+        color=ft.Colors.WHITE,
+        cursor_color=ft.Colors.CYAN_ACCENT_100,
+        width=300,
+        border_radius=10,
+        autocorrect=False,
+        enable_suggestions=False,
+    )
     email_field = ft.TextField(
         label="Correo electrónico",
         label_style=ft.TextStyle(color=ft.Colors.BLUE_GREY_100),
@@ -63,7 +75,8 @@ def Register(page: ft.Page):
 
     def handle_register(e):
         user = User()
-        if user.register(username_field.value, email_field.value, password_field.value):
+        # El orden correcto es: correo, password, nombre, usuario
+        if user.register(email_field.value, password_field.value, name_field.value, username_field.value):
             print("Registro exitoso")
             page.clean()
             Login(page)
@@ -75,7 +88,7 @@ def Register(page: ft.Page):
             page.update()
 
         print(
-            f"Registrando: {username_field.value}, {email_field.value}, {password_field.value}"
+            f"Registrando: {username_field.value}, {email_field.value}, {password_field.value}, {name_field.value}"
         )
         page.clean()
         Login(page)
@@ -109,6 +122,7 @@ def Register(page: ft.Page):
             title,
             ft.Container(height=20),
             username_field,
+            name_field,
             email_field,
             password_field,
             error_text,
