@@ -9,6 +9,7 @@ import sqlite3
 from typing import List, Dict, Optional
 from datetime import datetime
 import sys
+import re
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'database'))
 from database.setup_database import setup_database
 
@@ -131,8 +132,10 @@ class Gemini:
             model="gemini-2.0-flash",
             contents=contents
         )
-        self._guardar_mensaje(chat_id, "model", response.text)
-        return response.text
+        # Eliminar asteriscos con regex
+        clean_text = re.sub(r"\*+", "", response.text)
+        self._guardar_mensaje(chat_id, "model", clean_text)
+        return clean_text
     
     def evaluar_pdf(self, pdf_path: pathlib.Path, prompt: str, chat_id: Optional[int] = None, 
                      user_id: Optional[int] = None) -> str:
